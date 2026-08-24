@@ -1,0 +1,344 @@
+<title>Metadata Forensics Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --paper:#f6f7f9; --card:#ffffff; --ink:#161a20; --muted:#5c6672;
+    --line:#e2e6ea; --line-strong:#cdd4db;
+    --teal:#0e7490; --amber:#b45309; --green:#15803d; --red:#b91c1c;
+    --tint:#eef4f6;
+    --term-bg:#0d1117; --term-line:#1f2530; --term-txt:#c9d3de;
+    --term-dim:#7d8797; --term-green:#7ee787; --term-amber:#e3b341;
+    --term-red:#ff7b72; --term-cyan:#56d4dd; --term-prompt:#79c0ff;
+    --shadow:0 1px 2px rgba(20,30,45,.05),0 8px 24px rgba(20,30,45,.06);
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --paper:#0b0e13; --card:#12161d; --ink:#e7ecf1; --muted:#96a1ae;
+      --line:#232a34; --line-strong:#2f3743; --tint:#141b22;
+      --teal:#38bec9; --amber:#e0a458; --green:#6bbf73; --red:#f0847c;
+      --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#0b0e13; --card:#12161d; --ink:#e7ecf1; --muted:#96a1ae;
+    --line:#232a34; --line-strong:#2f3743; --tint:#141b22;
+    --teal:#38bec9; --amber:#e0a458; --green:#6bbf73; --red:#f0847c;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:"IBM Plex Sans",system-ui,sans-serif; line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:60rem; margin:0 auto; padding:clamp(1.1rem,4vw,3rem) clamp(1.1rem,4vw,2.2rem)}
+  .col{max-width:44rem}
+
+  /* ---- masthead ---- */
+  .mast{border:1px solid var(--line); background:var(--card);
+    border-radius:14px; padding:clamp(1.3rem,3vw,2.1rem); box-shadow:var(--shadow);
+    position:relative; overflow:hidden}
+  .mast::before{content:""; position:absolute; inset:0 auto 0 0; width:5px;
+    background:linear-gradient(180deg,var(--teal),var(--amber) 55%,var(--red))}
+  .kicker{font-family:"IBM Plex Mono",monospace; font-size:.72rem; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--teal); font-weight:600; margin:0 0 .7rem}
+  h1{font-size:clamp(1.7rem,4.4vw,2.5rem); line-height:1.1; margin:.1rem 0 .5rem;
+    font-weight:700; letter-spacing:-.02em; text-wrap:balance}
+  .sub{color:var(--muted); font-size:1.02rem; margin:0; max-width:40rem}
+  .meta{display:flex; flex-wrap:wrap; gap:.5rem .6rem; margin-top:1.3rem}
+  .meta span{font-family:"IBM Plex Mono",monospace; font-size:.74rem; color:var(--muted);
+    border:1px solid var(--line-strong); border-radius:999px; padding:.28rem .7rem}
+  .meta b{color:var(--ink); font-weight:600}
+
+  section{margin-top:2.6rem}
+  .eyebrow{font-family:"IBM Plex Mono",monospace; font-size:.72rem; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--muted); font-weight:600; margin:0 0 .3rem}
+  h2{font-size:1.5rem; line-height:1.2; margin:.1rem 0 .8rem; font-weight:700; letter-spacing:-.015em}
+  h2 .n{color:var(--teal); font-family:"IBM Plex Mono",monospace; margin-right:.5rem}
+  h3{font-size:1.06rem; margin:1.6rem 0 .6rem; font-weight:600}
+  p{margin:.6rem 0; max-width:44rem}
+  a{color:var(--teal)}
+
+  .lede{font-size:1.06rem}
+  code{font-family:"IBM Plex Mono",monospace; font-size:.86em; background:var(--tint);
+    border:1px solid var(--line); border-radius:5px; padding:.05em .38em}
+
+  /* ---- specimen header ---- */
+  .spec{display:flex; align-items:center; gap:.8rem; flex-wrap:wrap; margin:.4rem 0 0}
+  .badge{font-family:"IBM Plex Mono",monospace; font-size:.72rem; font-weight:600;
+    letter-spacing:.06em; text-transform:uppercase; padding:.3rem .6rem; border-radius:6px;
+    border:1px solid; }
+  .b-doc{color:var(--teal); border-color:color-mix(in srgb,var(--teal) 45%,transparent); background:color-mix(in srgb,var(--teal) 9%,transparent)}
+  .b-pdf{color:var(--red); border-color:color-mix(in srgb,var(--red) 45%,transparent); background:color-mix(in srgb,var(--red) 9%,transparent)}
+  .b-aud{color:var(--amber); border-color:color-mix(in srgb,var(--amber) 45%,transparent); background:color-mix(in srgb,var(--amber) 9%,transparent)}
+
+  /* ---- terminal card = the "screenshot" ---- */
+  .term{background:var(--term-bg); border:1px solid var(--term-line); border-radius:11px;
+    margin:1rem 0; box-shadow:var(--shadow); overflow:hidden}
+  .term .bar{display:flex; align-items:center; gap:.5rem; padding:.55rem .8rem;
+    border-bottom:1px solid var(--term-line); background:#11161f}
+  .dot{width:11px; height:11px; border-radius:50%}
+  .dot.r{background:#ff5f57}.dot.y{background:#febc2e}.dot.g{background:#28c840}
+  .term .bar .ttl{margin-left:.5rem; font-family:"IBM Plex Mono",monospace; font-size:.72rem;
+    color:var(--term-dim)}
+  .term pre{margin:0; padding:.9rem 1rem; overflow-x:auto; font-family:"IBM Plex Mono",monospace;
+    font-size:.795rem; line-height:1.62; color:var(--term-txt); white-space:pre; tab-size:2}
+  .term pre .c{color:var(--term-dim)}          /* comment */
+  .term pre .p{color:var(--term-green)}         /* prompt $ */
+  .term pre .cmd{color:#e6edf3; font-weight:500}/* the command */
+  .term pre .fl{color:var(--term-cyan)}         /* flag / tag name */
+  .term pre .v{color:var(--term-txt)}
+  .term pre .ok{color:var(--term-green)}
+  .term pre .warn{color:var(--term-amber)}
+  .term pre .err{color:var(--term-red)}
+  .term pre .hi{color:var(--term-amber); font-weight:600}
+
+  /* ---- data table ---- */
+  .twrap{overflow-x:auto; margin:1rem 0}
+  table{border-collapse:collapse; width:100%; font-size:.86rem; min-width:32rem}
+  th,td{text-align:left; padding:.5rem .7rem; border-bottom:1px solid var(--line); vertical-align:top}
+  thead th{font-family:"IBM Plex Mono",monospace; font-size:.7rem; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--muted); font-weight:600; border-bottom:1px solid var(--line-strong)}
+  td.k{font-family:"IBM Plex Mono",monospace; color:var(--muted); white-space:nowrap}
+  td.mono,.mono{font-family:"IBM Plex Mono",monospace}
+  .del{color:var(--red); text-decoration:line-through; text-decoration-thickness:1px}
+  .add{color:var(--green); font-weight:600}
+  tbody tr:last-child td{border-bottom:none}
+
+  /* ---- callout ---- */
+  .call{border:1px solid var(--line-strong); border-left:4px solid var(--amber);
+    background:var(--card); border-radius:10px; padding:.9rem 1.1rem; margin:1.2rem 0;
+    box-shadow:var(--shadow)}
+  .call.find{border-left-color:var(--teal)}
+  .call.warn{border-left-color:var(--red)}
+  .call .lab{font-family:"IBM Plex Mono",monospace; font-size:.72rem; letter-spacing:.1em;
+    text-transform:uppercase; font-weight:600; margin:0 0 .3rem}
+  .call.find .lab{color:var(--teal)} .call .lab{color:var(--amber)} .call.warn .lab{color:var(--red)}
+  .call p{margin:.25rem 0}
+
+  ul.clean{padding-left:1.15rem; margin:.6rem 0}
+  ul.clean li{margin:.32rem 0}
+
+  hr.rule{border:none; border-top:1px solid var(--line); margin:2.4rem 0}
+
+  footer{margin-top:3rem; padding-top:1.2rem; border-top:1px solid var(--line);
+    color:var(--muted); font-size:.82rem; font-family:"IBM Plex Mono",monospace}
+
+  @media print{
+    body{background:#fff} .mast,.term,.call{box-shadow:none}
+    section{break-inside:avoid-page}
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="mast">
+    <p class="kicker">Digital Forensics · Experiment 07</p>
+    <h1>Metadata Manipulation Beyond the Image</h1>
+    <p class="sub">Extending the ExifTool EXIF/GPS exercise to three other containers — a Microsoft Word document, a PDF, and an audio file — to read, spoof, and hide data, then recover what a naïve wipe leaves behind.</p>
+    <div class="meta">
+      <span><b>Tool</b> ExifTool 13.55</span>
+      <span><b>Host</b> macOS (darwin 25.6)</span>
+      <span><b>Specimens</b> .docx · .pdf · .mp3</span>
+      <span><b>Date</b> 2026-08-25</span>
+    </div>
+  </header>
+
+  <section class="col">
+    <p class="eyebrow">1 · Aim</p>
+    <h2>Objective</h2>
+    <p class="lede">The image lab showed that photographs carry <em>invisible</em> data — GPS coordinates, camera make/model, editing software, timestamps — that ExifTool can both read and rewrite. Documents, PDFs, and audio carry the same class of metadata in different containers. The aim here is to prove that the <strong>same read → spoof → hide → verify</strong> workflow transfers to those formats, to note where the tool's write support stops, and to show how an analyst detects the tampering.</p>
+  </section>
+
+  <section class="col">
+    <p class="eyebrow">2 · Theory</p>
+    <h2>One idea, four containers</h2>
+    <p>“Metadata” is data <em>about</em> the file that rides alongside the visible content. Each format stores it in its own envelope, but the exposure is identical — authorship, timestamps, tools, and free-text fields an attacker can abuse to hide a payload:</p>
+    <div class="twrap">
+    <table>
+      <thead><tr><th>Format</th><th>Where metadata lives</th><th>Hidden-text field</th></tr></thead>
+      <tbody>
+        <tr><td class="k">JPEG</td><td>EXIF / IPTC / XMP segments</td><td class="mono">Comment, UserComment</td></tr>
+        <tr><td class="k">DOCX</td><td><code>docProps/core.xml</code> inside a ZIP</td><td class="mono">dc:description, Keywords</td></tr>
+        <tr><td class="k">PDF</td><td><code>/Info</code> dict + XMP stream</td><td class="mono">Subject, Keywords</td></tr>
+        <tr><td class="k">MP3</td><td>ID3v2 frames prepended to audio</td><td class="mono">COMM (comment) frame</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="call find">
+      <p class="lab">Baseline (image lab, for reference)</p>
+      <p>The prior exercise wrote a fake location and camera into a photo:
+      <code>exiftool -overwrite_original -GPSLatitude=33.9249 -GPSLatitudeRef=N -GPSLongitude=18.4242 -GPSLongitudeRef=E -Make=Apple -Model="iPhone 13" group.jpg</code> — moving the pin from Mumbai to Cape Town and re-badging the camera. Below, the equivalent moves on the other three formats.</p>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <!-- ============ WORD ============ -->
+  <section class="col">
+    <p class="eyebrow">3 · Experiment A</p>
+    <h2><span class="n">A</span>Microsoft Word document</h2>
+    <div class="spec"><span class="badge b-doc">report.docx</span><span class="mono" style="color:var(--muted);font-size:.8rem">Author: Alice Fieldworker · Company: ACME Survey Group</span></div>
+
+    <h3>A.1 — Read all metadata</h3>
+    <p>ExifTool opens the ZIP and maps <code>docProps</code> straight into readable tags — the analog of <code>exiftool photo.jpg</code>.</p>
+    <div class="term"><div class="bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="ttl">exiftool report.docx</span></div><pre><span class="p">$</span> <span class="cmd">exiftool report.docx</span>
+<span class="fl">File Type</span>          : DOCX
+<span class="fl">Title</span>              : Quarterly Field Report
+<span class="fl">Creator</span>            : Alice Fieldworker
+<span class="fl">Last Modified By</span>   : Alice Fieldworker
+<span class="fl">Create Date</span>        : 2026:03:14 09:12:00Z
+<span class="fl">Modify Date</span>        : 2026:03:14 09:40:00Z
+<span class="fl">Keywords</span>           : survey, GPS, confidential
+<span class="fl">Application</span>         : Microsoft Office Word
+<span class="fl">Company</span>            : ACME Survey Group</pre></div>
+
+    <h3>A.2 — Attempt to write with ExifTool</h3>
+    <div class="term"><div class="bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="ttl">write attempt</span></div><pre><span class="p">$</span> <span class="cmd">exiftool -Creator="Bob Attacker" report.docx</span>
+<span class="err">Error: Writing of DOCX files is not yet supported - report.docx</span>
+    0 image files updated
+    <span class="err">1 files weren't updated due to errors</span></pre></div>
+    <div class="call find"><p class="lab">Finding A-1</p><p>ExifTool <strong>reads</strong> OOXML but will not <strong>write</strong> it — the metadata is inside a ZIP it won't repackage. So we manipulate the XML part directly, which is trivially easy.</p></div>
+
+    <h3>A.3 — Manipulate the container directly &amp; verify</h3>
+    <p>Unzip, edit <code>docProps/core.xml</code> (spoof the author, back-date both timestamps, inject a hidden note into <code>dc:description</code>), re-zip. ExifTool then confirms the forgery:</p>
+    <div class="term"><div class="bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="ttl">verify tampered docx</span></div><pre><span class="p">$</span> <span class="c"># core.xml rewritten inside the ZIP</span>
+<span class="p">$</span> <span class="cmd">exiftool -Creator -LastModifiedBy -CreateDate -ModifyDate -Description report_tampered.docx</span>
+<span class="fl">Creator</span>            : <span class="hi">System Administrator</span>
+<span class="fl">Last Modified By</span>   : <span class="hi">System Administrator</span>
+<span class="fl">Create Date</span>        : <span class="hi">2020:01:01 00:00:00Z</span>
+<span class="fl">Modify Date</span>        : <span class="hi">2020:01:01 00:00:00Z</span>
+<span class="fl">Description</span>        : <span class="hi">HIDDEN: exfil channel test 4E6F7465</span></pre></div>
+    <div class="twrap"><table>
+      <thead><tr><th>Field</th><th>Original</th><th>Forged</th></tr></thead>
+      <tbody>
+        <tr><td class="k">Creator</td><td class="mono del">Alice Fieldworker</td><td class="mono add">System Administrator</td></tr>
+        <tr><td class="k">Create Date</td><td class="mono del">2026-03-14 09:12</td><td class="mono add">2020-01-01 00:00</td></tr>
+        <tr><td class="k">Description</td><td class="mono">— (empty)</td><td class="mono add">HIDDEN payload injected</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <hr class="rule">
+
+  <!-- ============ PDF ============ -->
+  <section class="col">
+    <p class="eyebrow">4 · Experiment B</p>
+    <h2><span class="n">B</span>PDF document</h2>
+    <div class="spec"><span class="badge b-pdf">report.pdf</span><span class="mono" style="color:var(--muted);font-size:.8rem">Producer: ACME PDF Engine 1.0</span></div>
+
+    <h3>B.1 — Read all metadata</h3>
+    <div class="term"><div class="bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="ttl">exiftool report.pdf</span></div><pre><span class="p">$</span> <span class="cmd">exiftool report.pdf</span>
+<span class="fl">Title</span>       : Quarterly Field Report
+<span class="fl">Author</span>      : Alice Fieldworker
+<span class="fl">Creator</span>     : ACME Survey Tool
+<span class="fl">Producer</span>    : ACME PDF Engine 1.0
+<span class="fl">Create Date</span> : 2026:03:14 09:12:00Z
+<span class="fl">Keywords</span>    : survey, GPS, confidential</pre></div>
+
+    <h3>B.2 — Spoof metadata &amp; inject a hidden comment</h3>
+    <p>Unlike DOCX, PDF <strong>is</strong> in ExifTool's writable list — the same <code>-overwrite_original</code> syntax as the photo works verbatim:</p>
+    <div class="term"><div class="bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="ttl">spoof + inject</span></div><pre><span class="p">$</span> <span class="cmd">exiftool -overwrite_original \
+     -Author="System Administrator" -Producer="Adobe Acrobat Pro" \
+     -CreateDate="2020:01:01 00:00:00Z" -Keywords="cleaned" report_tampered.pdf</span>
+    <span class="ok">1 image files updated</span>
+<span class="p">$</span> <span class="cmd">exiftool -overwrite_original -Subject="HIDDEN: exfil channel test 4E6F7465" report_tampered.pdf</span>
+    <span class="ok">1 image files updated</span>
+<span class="p">$</span> <span class="cmd">exiftool -Author -Producer -CreateDate -Keywords -Subject report_tampered.pdf</span>
+<span class="fl">Author</span>      : <span class="hi">System Administrator</span>
+<span class="fl">Producer</span>    : <span class="hi">Adobe Acrobat Pro</span>
+<span class="fl">Create Date</span> : <span class="hi">2020:01:01 00:00:00Z</span>
+<span class="fl">Keywords</span>    : <span class="hi">cleaned</span>
+<span class="fl">Subject</span>     : <span class="hi">HIDDEN: exfil channel test 4E6F7465</span></pre></div>
+
+    <h3>B.3 — Recover the “deleted” metadata (counter-forensics)</h3>
+    <p>ExifTool writes PDFs by <em>incremental update</em>: it appends a new revision and leaves the old one in place. The original author is still physically in the bytes — <code>strings</code> pulls it right back out.</p>
+    <div class="term"><div class="bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="ttl">forensic residue</span></div><pre><span class="p">$</span> <span class="cmd">strings report_tampered.pdf | grep -Ei "Alice|survey, GPS"</span>
+<span class="v">&lt;&lt; /Title (Quarterly Field Report) /Author (<span class="hi">Alice Fieldworker</span>)
+   /Producer (ACME PDF Engine 1.0)
+   /Keywords (<span class="hi">survey, GPS, confidential</span>) &gt;&gt;</span>
+<span class="p">$</span> <span class="cmd">ls -l report.pdf report_tampered.pdf</span>
+<span class="v">  892  report.pdf          </span><span class="c"># original</span>
+<span class="v"> 4934  report_tampered.pdf </span><span class="warn"># grew — both revisions retained</span></pre></div>
+    <div class="call warn"><p class="lab">Finding B-1 · High value</p><p>An ExifTool “edit” on a PDF does <strong>not erase</strong> the prior value. The wiped author, keywords, and dates survive in the earlier revision, and the file <em>grows</em> — two tell-tales an analyst uses to prove tampering. Truly scrubbing a PDF requires a linearize/rewrite pass (e.g. <code>qpdf --linearize</code>), not a metadata edit.</p></div>
+  </section>
+
+  <hr class="rule">
+
+  <!-- ============ AUDIO ============ -->
+  <section class="col">
+    <p class="eyebrow">5 · Experiment C</p>
+    <h2><span class="n">C</span>Audio file (MP3 / ID3)</h2>
+    <div class="spec"><span class="badge b-aud">track.mp3</span><span class="mono" style="color:var(--muted);font-size:.8rem">Artist: Alice Fieldworker · ID3v2.3</span></div>
+
+    <h3>C.1 — Read ID3 tags</h3>
+    <div class="term"><div class="bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="ttl">exiftool track.mp3</span></div><pre><span class="p">$</span> <span class="cmd">exiftool -Artist -Title -Album -Year -Genre -Comment -AudioBitrate track.mp3</span>
+<span class="fl">Artist</span>        : Alice Fieldworker
+<span class="fl">Title</span>         : Site Recording 12
+<span class="fl">Album</span>         : Q1 Survey
+<span class="fl">Year</span>          : 2026
+<span class="fl">Genre</span>         : Speech
+<span class="fl">Comment</span>       : Recorded on-site, mic 2
+<span class="fl">Audio Bitrate</span> : 128 kbps</pre></div>
+
+    <h3>C.2 — Attempt to write with ExifTool</h3>
+    <div class="term"><div class="bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="ttl">write attempt + capability check</span></div><pre><span class="p">$</span> <span class="cmd">exiftool -Artist="Bob Attacker" track.mp3</span>
+<span class="err">Error: Writing of MP3 files is not yet supported - track.mp3</span>
+<span class="p">$</span> <span class="cmd">exiftool -listwf | grep -Ei "mp3|m4a|wav|flac"</span>
+<span class="v">M4A</span>   <span class="c"># MP4-family audio IS writable; MP3 / WAV / FLAC are not</span></pre></div>
+    <div class="call find"><p class="lab">Finding C-1</p><p>ExifTool <strong>reads</strong> ID3 fully but <strong>cannot write MP3, WAV, or FLAC</strong> — only the MP4 container family (<code>M4A</code>, <code>MOV</code>, <code>MP4</code>). To forge an MP3 tag you edit the ID3v2 frames directly (below); to do it <em>with</em> ExifTool you'd convert to <code>.m4a</code> first.</p></div>
+
+    <h3>C.3 — Rewrite the ID3 frames directly &amp; verify</h3>
+    <p>Strip the old ID3v2 header, rebuild the frames with a spoofed artist/album, a back-dated year, and a hidden <code>COMM</code> comment, then re-read:</p>
+    <div class="term"><div class="bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="ttl">verify tampered mp3</span></div><pre><span class="p">$</span> <span class="c"># ID3v2.3 frames rewritten, audio stream untouched</span>
+<span class="p">$</span> <span class="cmd">exiftool -Artist -Album -Year -Comment track_tampered.mp3</span>
+<span class="fl">Artist</span>  : <span class="hi">DJ Anonymous</span>
+<span class="fl">Album</span>   : <span class="hi">Public Domain</span>
+<span class="fl">Year</span>    : <span class="hi">2015</span>
+<span class="fl">Comment</span> : <span class="hi">(steg) HIDDEN: exfil channel test 4E6F7465</span></pre></div>
+  </section>
+
+  <hr class="rule">
+
+  <!-- ============ COMPARISON ============ -->
+  <section class="col">
+    <p class="eyebrow">6 · Analysis</p>
+    <h2>Comparative results</h2>
+    <div class="twrap"><table>
+      <thead><tr><th>Format</th><th>ExifTool read</th><th>ExifTool write</th><th>Hidden-text vector used</th><th>Forensic residue</th></tr></thead>
+      <tbody>
+        <tr><td class="k">JPEG</td><td class="add">yes</td><td class="add">yes</td><td class="mono">Comment</td><td>overwrite in place</td></tr>
+        <tr><td class="k">DOCX</td><td class="add">yes</td><td class="del">no → edit ZIP</td><td class="mono">dc:description</td><td>clean re-zip</td></tr>
+        <tr><td class="k">PDF</td><td class="add">yes</td><td class="add">yes</td><td class="mono">Subject / Keywords</td><td class="warn">old revision retained ⚠</td></tr>
+        <tr><td class="k">MP3</td><td class="add">yes</td><td class="del">no → edit ID3</td><td class="mono">COMM frame</td><td>frames replaced</td></tr>
+      </tbody>
+    </table></div>
+    <p>All four formats leak authorship, timestamps, and tool fingerprints, and all four expose a free-text field an attacker can weaponize as a covert channel. The write path differs — ExifTool writes JPEG and PDF directly but hands off DOCX and MP3 to container-level editing — yet the metadata is equally forgeable in every case.</p>
+  </section>
+
+  <section class="col">
+    <p class="eyebrow">7 · Defensive takeaways</p>
+    <h2>Detection &amp; mitigation</h2>
+    <ul class="clean">
+      <li><strong>Never trust metadata as evidence of authorship or time.</strong> Every field shown here was rewritten in seconds; timestamps and “Author” are attacker-controlled.</li>
+      <li><strong>Hunt for residue.</strong> On PDFs, compare revision count and file growth (<code>892 → 4934 bytes</code>) and <code>grep</code> for prior values; on DOCX, inspect every part in the ZIP, not just what a viewer surfaces.</li>
+      <li><strong>Look for impossible values.</strong> A 2020 create-date on a 2026 document, or <code>Producer: Adobe Acrobat Pro</code> on a file the logs say came from a survey tool, are contradiction signals.</li>
+      <li><strong>Scrub before sharing.</strong> Strip metadata deliberately — <code>exiftool -all= file.pdf</code>, then linearize — rather than assuming an edit erased anything.</li>
+      <li><strong>Inspect free-text fields for payloads.</strong> Comment / Subject / <code>COMM</code> fields are a known exfiltration and steganography channel; scan them, don't just display them.</li>
+    </ul>
+  </section>
+
+  <section class="col">
+    <p class="eyebrow">8 · Result</p>
+    <h2>Conclusion</h2>
+    <p class="lede">The image-metadata workflow transferred cleanly to Word, PDF, and audio: in every container the metadata was <strong>read, spoofed, and used to hide a payload</strong>, and verified with ExifTool. The exercise also surfaced two limits worth remembering — ExifTool refuses to write ZIP-based DOCX and MP3 (forcing direct container edits), and its PDF writes leave the original values physically recoverable, which is exactly the seam a forensic analyst exploits to catch the forgery.</p>
+  </section>
+
+  <footer>
+    exiftool 13.55 · specimens generated for lab use · read → spoof → hide → verify → recover
+  </footer>
+
+</div>
